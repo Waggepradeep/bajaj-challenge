@@ -1,54 +1,81 @@
 ## Bajaj Finserv Health | Qualifier 1 | JAVA
 
-Spring Boot app that:
-- On startup, generates a webhook, receives an `accessToken`
-- Chooses your final SQL query (from env or files)
-- Submits the SQL to the test webhook with JWT in `Authorization`
+Spring Boot app that on startup:
+- Generates a webhook and receives an `accessToken` (JWT)
+- Loads your final SQL from env or file
+- Submits the SQL to the test webhook with the JWT in `Authorization`
 
-### Your details
-Configured in `src/main/resources/application.properties` under `contest.*`.
+### Prerequisites
+- Java 17+ (tested with Java 22)
+- Maven 3.9+
 
-Defaults (as provided):
+### Configure your details
+Edit `src/main/resources/application.properties` (prefix `contest.*`):
 - name: W Pradeep
 - regNo: U25UV22T029081
 - email: waggepradeep369@gmail.com
 
-### Supplying the final SQL
-There are two ways:
-1) Environment variable (recommended during submission)
+### Provide the final SQL
+Two options (the app prefers env var when present):
+
+1) Environment variable (no rebuild needed)
 
 ```powershell
-$env:FINAL_QUERY='SELECT 1;'
-mvn -q -DskipTests spring-boot:run
+$env:FINAL_QUERY = '<your full SQL>'
+java -jar target\bajaj-challenge-0.0.1-SNAPSHOT.jar
 ```
 
-2) File-based (no env var set)
-- If the last two digits of `regNo` are odd, the app reads `src/main/resources/queries/odd.sql`
-- If even, it reads `src/main/resources/queries/even.sql`
+2) File-based (rebuild required after changes)
+- If the last two digits of `regNo` are odd → `src/main/resources/queries/odd.sql`
+- If even → `src/main/resources/queries/even.sql`
 
-Replace the placeholder `SELECT 1;` with your actual answer.
+Replace the placeholder with your final SQL. Then rebuild.
 
 ### Build
 ```powershell
 mvn -q -DskipTests clean package
 ```
-JAR output: `target/bajaj-challenge-0.0.1-SNAPSHOT.jar`
+Output JAR: `target\bajaj-challenge-0.0.1-SNAPSHOT.jar`
 
 ### Run
 ```powershell
-# Option A: with env var
-$env:FINAL_QUERY='SELECT 1;'
-java -jar target/bajaj-challenge-0.0.1-SNAPSHOT.jar
+# Option A: with env var (recommended)
+$env:FINAL_QUERY = 'SELECT 1;'  # replace with your real SQL
+java -jar target\bajaj-challenge-0.0.1-SNAPSHOT.jar
 
-# Option B: without env var (uses odd/even file)
-java -jar target/bajaj-challenge-0.0.1-SNAPSHOT.jar
+# Option B: file-based (your regNo ends with 81 → odd.sql)
+java -jar target\bajaj-challenge-0.0.1-SNAPSHOT.jar
 ```
 
+Expected console flow:
+1) “Starting Bajaj challenge flow”
+2) “Webhook generated … hasToken=true”
+3) “Submission status=200, body=…”
+
+### Publish to GitHub (to make a public JAR link)
+```powershell
+git init
+git add .
+git commit -m "Initial commit: code"
+git branch -M main
+git remote add origin https://github.com/Waggepradeep/bajaj-challenge.git
+
+# Copy the built JAR into a tracked folder for a stable raw URL
+mkdir jar 2>$null
+Copy-Item target\bajaj-challenge-0.0.1-SNAPSHOT.jar jar\bajaj-challenge-0.0.1-SNAPSHOT.jar -Force
+git add jar\bajaj-challenge-0.0.1-SNAPSHOT.jar
+git commit -m "Add compiled Spring Boot JAR"
+git push -u origin main
+```
+
+Links for the submission form:
+- Public repo: https://github.com/Waggepradeep/bajaj-challenge
+- Public JAR (raw, direct download):  
+  https://raw.githubusercontent.com/Waggepradeep/bajaj-challenge/main/jar/bajaj-challenge-0.0.1-SNAPSHOT.jar
+
 ### Notes
-- No controllers are exposed; the flow triggers on startup via `ApplicationRunner`.
-- HTTP client used: `WebClient` (reactive).
-- Endpoints used:
+- No HTTP controllers; the flow is triggered by an `ApplicationRunner`.
+- HTTP client: Spring `WebClient`.
+- Endpoints:
   - `https://bfhldevapigw.healthrx.co.in/hiring/generateWebhook/JAVA`
   - `https://bfhldevapigw.healthrx.co.in/hiring/testWebhook/JAVA`
-
-

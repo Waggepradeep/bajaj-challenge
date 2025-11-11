@@ -118,6 +118,10 @@ public class StartupRunner implements ApplicationRunner {
 	private void submitSolution(String jwtToken, String finalQuery) {
 		SubmitSolutionRequest body = new SubmitSolutionRequest(finalQuery);
 
+		log.info("Submitting solution: sqlLength={}, preview={}...",
+			finalQuery == null ? 0 : finalQuery.length(),
+			finalQuery == null ? "" : preview(finalQuery, 160));
+
 		ClientResponse response = webClient.post()
 			.uri(TEST_WEBHOOK_URL)
 			.header(HttpHeaders.AUTHORIZATION, jwtToken)
@@ -131,7 +135,20 @@ public class StartupRunner implements ApplicationRunner {
 			return;
 		}
 		String respBody = response.bodyToMono(String.class).blockOptional().orElse("");
-		log.info("Submission status={}, body={}", response.statusCode(), respBody);
+		int bodyLen = respBody == null ? 0 : respBody.length();
+		log.info("Submission status={}, headers={}, bodyLength={}",
+			response.statusCode(), response.headers().asHttpHeaders(), bodyLen);
+		if (bodyLen > 0) {
+			log.info("Submission body: {}", respBody);
+		} else {
+			log.info("Submission body is empty (API may return 200 with no payload on success).");
+		}
+	}
+
+	private String preview(String text, int max) {
+		if (text == null) return "";
+		if (text.length() <= max) return text;
+		return text.substring(0, max) + "...";
 	}
 }
 
